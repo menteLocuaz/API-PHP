@@ -1,0 +1,27 @@
+{
+  "name": "arancamon/api-php",
+  "description": "init",
+  "autoload": {
+    "psr-4": {
+      "Arancamon\\ApiPhp\\": "app/"
+    }
+  },
+  "authors": [
+    {
+      "name": "arancamon"
+    }
+  ],
+  "require": {
+    "vlucas/phpdotenv": "^5.6",
+    "zircote/swagger-php": "^6.1",
+    "illuminate/database": "^13.14"
+  },
+  "require-dev": {
+    "pestphp/pest": "^4.7"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
