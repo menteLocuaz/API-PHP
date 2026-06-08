@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    container_name: postgres_arctic
+    environment:
+      POSTGRES_DB: arctic
+      POSTGRES_USER: sa
+      POSTGRES_PASSWORD: 52UYT
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
