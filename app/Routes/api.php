@@ -23,7 +23,7 @@ if (count($routesArray) === 1 && isset($_SERVER['REQUEST_METHOD'])) {
 
     switch ($method) {
         case 'GET':
-            $response = ['status' => 200, 'result' => 'GET'];
+            require __DIR__ . '/../Services/GetServices.php';
             break;
 
         case 'POST':
