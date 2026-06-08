@@ -11,9 +11,7 @@ error_reporting(E_ALL);
 use Arancamon\ApiPhp\Controllers\RoutesController;
 use Arancamon\ApiPhp\Models\Connection;
 
-echo '<pre>';
-print_r(Connection::Connect());
-echo '</pre>';
+Connection::Connect();
 
 $router = new RoutesController();
 $router->index();
