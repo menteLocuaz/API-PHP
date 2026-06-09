@@ -7,16 +7,16 @@ use Arancamon\ApiPhp\Models\GetModel;
 class GetController
 {
     // Peticion Get sin filtro
-    public static function GetData($table, $select, $orderBy, $orderMode)
+    public static function GetData($table, $select, $orderBy, $orderMode, $startAt, $endAt)
     {
-        $resp = GetModel::GetData($table, $select, $orderBy, $orderMode);
+        $resp = GetModel::GetData($table, $select, $orderBy, $orderMode, $startAt, $endAt);
         new GetController()->FncResponse($resp);
     }
 
     //Peticion Get con filtro
-    public static function GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode)
+    public static function GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode, $startAt, $endAt)
     {
-        $resp = GetModel::GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode);
+        $resp = GetModel::GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode, $startAt, $endAt);
         new GetController()->FncResponse($resp);
     }
 
