@@ -20,6 +20,13 @@ class GetController
         new GetController()->FncResponse($resp);
     }
 
+    // Peticion Get sin filtro
+    public static function GetRelData($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt)
+    {
+        $resp = GetModel::GetRelData($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt);
+        new GetController()->FncResponse($resp);
+    }
+
     // repuesta del controlador
     public function FncResponse($response)
     {
