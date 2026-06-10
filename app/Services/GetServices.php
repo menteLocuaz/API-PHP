@@ -14,6 +14,14 @@ $reponse = new GetController();
 if (isset($_GET['linkTo']) && isset($_GET['equalTo'])) {
     // Consulta con filtro
     $reponse->GetDataFilter($table, $select, $_GET['linkTo'], $_GET['equalTo'], $orderBy, $orderMode, $startAt, $endAt);
+} elseif (
+    isset($_GET['rel'])
+    && isset($_GET['type'])
+    && $table == 'relations'
+    && !isset($_GET['linkTo'])
+    && !isset($_GET['equalTo'])
+) {
+    $reponse->GetRelData($_GET['rel'], $_GET['type'], $select, $orderBy, $orderMode, $startAt, $endAt);
 } else {
     // Consulta sin filtro
     $reponse->GetData($table, $select, $orderBy, $orderMode, $startAt, $endAt);

@@ -69,4 +69,40 @@ class GetModel
             $stmt->bindValue(':' . $field, $values[$key] ?? null, PDO::PARAM_STR);
         }
     }
+
+    // Peticion relacion sin filtro
+    public static function GetRelData($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt)
+    {
+        $relArray = explode(',', $rel);
+        $typeArray = explode(',', $type);
+
+        if (count($relArray) < 1) {
+            return null;
+        }
+
+        $innerJoinTxt = '';
+        if (count($relArray) > 1) {
+            foreach ($relArray as $key => $values) {
+                if ($key > 0) {
+                    $innerJoinTxt .= "INNER JOIN $values ON {$relArray[0]}.id_{$typeArray[$key]}_{$typeArray[0]} = $values.id_{$typeArray[$key]} ";
+                }
+            }
+        }
+
+        $SQL = "SELECT $select FROM {$relArray[0]} $innerJoinTxt";
+        if ($orderBy != null && $orderMode != null && $startAt === null && $endAt === null) {
+            $SQL = "SELECT $select FROM {$relArray[0]} $innerJoinTxt ORDER BY $orderBy $orderMode";
+        }
+        if ($orderBy != null && $orderMode != null && $startAt !== null && $endAt !== null) {
+            $SQL = "SELECT $select FROM {$relArray[0]} $innerJoinTxt ORDER BY $orderBy $orderMode LIMIT $endAt OFFSET $startAt";
+        }
+        if ($orderBy === null && $orderMode === null && $startAt !== null && $endAt !== null) {
+            $SQL = "SELECT $select FROM {$relArray[0]} $innerJoinTxt LIMIT $endAt OFFSET $startAt";
+        }
+
+        $stmt = Connection::Connect()->prepare($SQL);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_CLASS);
+    }
 }
