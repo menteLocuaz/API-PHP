@@ -84,7 +84,11 @@ class GetModel
         if (count($relArray) > 1) {
             foreach ($relArray as $key => $values) {
                 if ($key > 0) {
-                    $innerJoinTxt .= "INNER JOIN $values ON {$relArray[0]}.id_{$typeArray[$key]}_{$typeArray[0]} = $values.id_{$typeArray[$key]} ";
+                    if ($key === 1) {
+                        $innerJoinTxt .= "INNER JOIN $values ON {$relArray[0]}.id_{$typeArray[0]} = $values.id_{$typeArray[0]}_{$typeArray[1]} ";
+                    } else {
+                        $innerJoinTxt .= "INNER JOIN $values ON {$relArray[1]}.id_{$typeArray[$key]}_{$typeArray[1]} = $values.id_{$typeArray[$key]} ";
+                    }
                 }
             }
         }
