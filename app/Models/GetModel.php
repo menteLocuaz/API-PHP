@@ -189,4 +189,43 @@ class GetModel
 
         return $stmt->fetchAll(PDO::FETCH_CLASS);
     }
+
+    // Busqueda con el like 
+    public static function GetDataSearch(
+        $table,
+        $select,
+        $linkTo,
+        $search,
+        $orderBy,
+        $orderMode,
+        $startAt,
+        $endAt
+    ) {
+
+        $SQL = "SELECT $select FROM $table WHERE $linkTo LIKE :search";
+
+        if ($orderBy !== null && $orderMode !== null && $startAt === null && $endAt === null) {
+            $SQL .= " ORDER BY $orderBy $orderMode";
+        }
+
+        if ($orderBy !== null && $orderMode !== null && $startAt !== null && $endAt !== null) {
+            $SQL .= " ORDER BY $orderBy $orderMode LIMIT $endAt OFFSET $startAt";
+        }
+
+        if ($orderBy === null && $orderMode === null && $startAt !== null && $endAt !== null) {
+            $SQL .= " LIMIT $endAt OFFSET $startAt";
+        }
+
+        $stmt = Connection::Connect()->prepare($SQL);
+
+        $stmt->bindValue(
+            ':search',
+            '%' . $search . '%',
+            PDO::PARAM_STR
+        );
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_CLASS);
+    }
 }

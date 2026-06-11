@@ -73,7 +73,23 @@ class GetController
 
         self::response($response);
     }
+    // Peticiones GET paar el buscador sin relacion 
+    public static function GetDataSearch(
+        string $table,
+        string $select,
+        string $linkTo,
+        mixed $search,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): void {
+        $response = GetModel::GetDataSearch($table, $select, $linkTo, $search, $orderBy, $orderMode, $startAt, $endAt);
 
+        self::response($response);
+    }
+
+    // Repuesta del controlador
     private static function response(array $response): void
     {
         if (!empty($response)) {
