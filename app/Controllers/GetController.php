@@ -6,42 +6,97 @@ use Arancamon\ApiPhp\Models\GetModel;
 
 class GetController
 {
-    // Peticion Get sin filtro
-    public static function GetData($table, $select, $orderBy, $orderMode, $startAt, $endAt)
-    {
-        $resp = GetModel::GetData($table, $select, $orderBy, $orderMode, $startAt, $endAt);
-        new GetController()->FncResponse($resp);
+    public static function GetData(
+        string $table,
+        string $select,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): void {
+        $response = GetModel::GetData($table, $select, $orderBy, $orderMode, $startAt, $endAt);
+
+        self::response($response);
     }
 
-    //Peticion Get con filtro
-    public static function GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode, $startAt, $endAt)
-    {
-        $resp = GetModel::GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode, $startAt, $endAt);
-        new GetController()->FncResponse($resp);
+    public static function GetDataFilter(
+        string $table,
+        string $select,
+        string $linkTo,
+        mixed $equalTo,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): void {
+        $response = GetModel::GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode, $startAt, $endAt);
+
+        self::response($response);
     }
 
-    // Peticion Get sin filtro
-    public static function GetRelData($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt)
-    {
-        $resp = GetModel::GetRelData($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt);
-        new GetController()->FncResponse($resp);
+    public static function GetRelData(
+        string $rel,
+        string $type,
+        string $select,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): void {
+        $response = GetModel::GetRelData($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt);
+
+        self::response($response);
     }
 
-    // repuesta del controlador
-    public function FncResponse($response)
+    public static function GetRelDataFilter(
+        string $rel,
+        string $type,
+        string $select,
+        string $linkTo,
+        mixed $equalTo,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): void {
+        $response = GetModel::GetRelDataFilter(
+            $rel,
+            $type,
+            $select,
+            $linkTo,
+            $equalTo,
+            $orderBy,
+            $orderMode,
+            $startAt,
+            $endAt,
+        );
+
+        self::response($response);
+    }
+
+    private static function response(array $response): void
     {
         if (!empty($response)) {
-            $json = array(
-                'status' => 200,
+            $status = 200;
+
+            $json = [
+                'status' => $status,
                 'total' => count($response),
                 'results' => $response,
-            );
+            ];
         } else {
-            $json = array(
-                'status' => 403,
-                'results' => 'Not fount',
-            );
+            $status = 404;
+
+            $json = [
+                'status' => $status,
+                'results' => 'Not found',
+            ];
         }
-        echo json_encode($json, http_response_code($json['status']));
+
+        http_response_code($status);
+
+        header('Content-Type: application/json');
+
+        echo json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 }
