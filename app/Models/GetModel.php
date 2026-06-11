@@ -201,18 +201,22 @@ class GetModel
         $startAt,
         $endAt
     ) {
+        $fields = explode(',', $linkTo);
 
-        $SQL = "SELECT $select FROM $table WHERE $linkTo LIKE :search";
+        $conditions = [];
 
-        if ($orderBy !== null && $orderMode !== null && $startAt === null && $endAt === null) {
+        foreach ($fields as $field) {
+            $conditions[] = "$field LIKE :search";
+        }
+
+        $SQL = "SELECT $select FROM $table WHERE "
+            . implode(' OR ', $conditions);
+
+        if ($orderBy !== null && $orderMode !== null) {
             $SQL .= " ORDER BY $orderBy $orderMode";
         }
 
-        if ($orderBy !== null && $orderMode !== null && $startAt !== null && $endAt !== null) {
-            $SQL .= " ORDER BY $orderBy $orderMode LIMIT $endAt OFFSET $startAt";
-        }
-
-        if ($orderBy === null && $orderMode === null && $startAt !== null && $endAt !== null) {
+        if ($startAt !== null && $endAt !== null) {
             $SQL .= " LIMIT $endAt OFFSET $startAt";
         }
 
@@ -220,7 +224,7 @@ class GetModel
 
         $stmt->bindValue(
             ':search',
-            '%' . $search . '%',
+            "%{$search}%",
             PDO::PARAM_STR
         );
 

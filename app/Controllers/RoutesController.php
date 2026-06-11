@@ -1,14 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Arancamon\ApiPhp\Controllers;
 
-class RoutesController
+final class RoutesController
 {
-    // ruta principal
-    public function index()
+    /**
+     * Carga las rutas de la API.
+     */
+    public function index(): void
     {
-        include __DIR__ . '/../Routes/api.php';
+        $routeFile = dirname(__DIR__) . '/Routes/api.php';
+
+        if (!file_exists($routeFile)) {
+            throw new \RuntimeException(
+                "The path file was not found: {$routeFile}"
+            );
+        }
+
+        require_once $routeFile;
     }
 }
-
-;
