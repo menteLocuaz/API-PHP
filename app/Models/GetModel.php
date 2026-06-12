@@ -52,9 +52,20 @@ class GetModel
         );
     }
 
+    private static function db(): PDO
+    {
+        static $pdo = null;
+
+        if ($pdo === null) {
+            $pdo = Connection::Connect();
+        }
+
+        return $pdo;
+    }
+
     private static function execute(string $sql, array $params = []): array
     {
-        $stmt = Connection::Connect()->prepare($sql);
+        $stmt = self::db()->prepare($sql);
 
         foreach ($params as $name => $value) {
             $stmt->bindValue($name, $value);
@@ -114,6 +125,35 @@ class GetModel
         return " LIMIT $endAt OFFSET $startAt";
     }
 
+    private static function buildJoin(array $tables, array $types): string
+    {
+        if (count($tables) < 2) {
+            return '';
+        }
+
+        foreach ($tables as $t) {
+            self::validateIdentifier($t);
+        }
+        foreach ($types as $t) {
+            self::validateIdentifier($t);
+        }
+
+        $join = '';
+        foreach ($tables as $key => $table) {
+            if ($key === 0) {
+                continue;
+            }
+
+            if ($key === 1) {
+                $join .= "INNER JOIN $table ON {$tables[0]}.id_{$types[0]} = $table.id_{$types[0]}_{$types[1]} ";
+            } else {
+                $join .= "INNER JOIN $table ON {$tables[1]}.id_{$types[$key]}_{$types[1]} = $table.id_{$types[$key]} ";
+            }
+        }
+
+        return $join;
+    }
+
     // Peticion relacion sin filtro
     public static function findRelations($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt)
     {
@@ -124,28 +164,11 @@ class GetModel
             return null;
         }
 
-        $innerJoinTxt = '';
-        if (count($relArray) > 1) {
-            foreach ($relArray as $relTable) {
-                self::validateIdentifier($relTable);
-            }
-            foreach ($typeArray as $typeVal) {
-                self::validateIdentifier($typeVal);
-            }
-            foreach ($relArray as $key => $values) {
-                if ($key > 0) {
-                    if ($key === 1) {
-                        $innerJoinTxt .= "INNER JOIN $values ON {$relArray[0]}.id_{$typeArray[0]} = $values.id_{$typeArray[0]}_{$typeArray[1]} ";
-                    } else {
-                        $innerJoinTxt .= "INNER JOIN $values ON {$relArray[1]}.id_{$typeArray[$key]}_{$typeArray[1]} = $values.id_{$typeArray[$key]} ";
-                    }
-                }
-            }
-        }
+        $joinClause = self::buildJoin($relArray, $typeArray);
 
         $SQL =
             self::buildSelect($relArray[0], $select)
-            . ($innerJoinTxt !== '' ? " $innerJoinTxt" : '')
+            . ($joinClause !== '' ? " $joinClause" : '')
             . self::buildOrder($orderBy, $orderMode)
             . self::buildLimit($startAt, $endAt);
 
@@ -171,28 +194,11 @@ class GetModel
             return null;
         }
 
-        $innerJoinTxt = '';
-        if (count($relArray) > 1) {
-            foreach ($relArray as $relTable) {
-                self::validateIdentifier($relTable);
-            }
-            foreach ($typeArray as $typeVal) {
-                self::validateIdentifier($typeVal);
-            }
-            foreach ($relArray as $key => $values) {
-                if ($key > 0) {
-                    if ($key === 1) {
-                        $innerJoinTxt .= "INNER JOIN $values ON {$relArray[0]}.id_{$typeArray[0]} = $values.id_{$typeArray[0]}_{$typeArray[1]} ";
-                    } else {
-                        $innerJoinTxt .= "INNER JOIN $values ON {$relArray[1]}.id_{$typeArray[$key]}_{$typeArray[1]} = $values.id_{$typeArray[$key]} ";
-                    }
-                }
-            }
-        }
+        $joinClause = self::buildJoin($relArray, $typeArray);
 
         $params = [];
 
-        $SQL = self::buildSelect($relArray[0], $select) . ($innerJoinTxt !== '' ? " $innerJoinTxt" : '');
+        $SQL = self::buildSelect($relArray[0], $select) . ($joinClause !== '' ? " $joinClause" : '');
 
         if ($linkTo != null && $equalTo != null) {
             $rawFields = explode(',', $linkTo);
@@ -250,28 +256,12 @@ class GetModel
 
         $relArray = explode(',', $rel);
         $typeArray = explode(',', $type);
-        foreach ($relArray as $relTable) {
-            self::validateIdentifier($relTable);
-        }
-        foreach ($typeArray as $typeVal) {
-            self::validateIdentifier($typeVal);
-        }
-        $innerJoinText = '';
+        $joinClause = self::buildJoin($relArray, $typeArray);
 
         if (count($relArray) > 1) {
-            foreach ($relArray as $key => $values) {
-                if ($key > 0) {
-                    if ($key === 1) {
-                        $innerJoinText .= "INNER JOIN $values ON {$relArray[0]}.id_{$typeArray[0]} = $values.id_{$typeArray[0]}_{$typeArray[1]} ";
-                    } else {
-                        $innerJoinText .= "INNER JOIN $values ON {$relArray[1]}.id_{$typeArray[$key]}_{$typeArray[1]} = $values.id_{$typeArray[$key]} ";
-                    }
-                }
-            }
-
             $sql =
                 self::buildSelect($relArray[0], $select)
-                . " $innerJoinText"
+                . ($joinClause !== '' ? " $joinClause" : '')
                 . " WHERE CAST($linkToArray[0] AS TEXT) ILIKE :search0 $linkToText"
                 . self::buildOrder($orderBy, $orderMode)
                 . self::buildLimit($startAt, $endAt);
@@ -286,8 +276,8 @@ class GetModel
 
             try {
                 return self::execute($sql, $params);
-            } catch (PDOException $Exception) {
-                return null;
+            } catch (PDOException $e) {
+                throw new \Exception($e->getMessage());
             }
         } else {
             return null;
@@ -320,7 +310,7 @@ class GetModel
             }
             return self::execute($SQL, [':search' => "%{$searchValue}%"]);
         } catch (PDOException $e) {
-            return [];
+            throw new \Exception($e->getMessage());
         }
     }
 
@@ -376,15 +366,18 @@ class GetModel
 
         $sql =
             self::buildSelect($table, $select)
-            . " WHERE $linkTo BETWEEN '$between1' AND '$between2'"
+            . " WHERE $linkTo BETWEEN :between_from AND :between_to"
             . ($filter !== '' ? " $filter" : '')
             . self::buildOrder($orderBy, $orderMode)
             . self::buildLimit($startAt, $endAt);
 
         try {
-            return self::execute($sql);
-        } catch (PDOException $Exception) {
-            return null;
+            return self::execute($sql, [
+                ':between_from' => $between1,
+                ':between_to' => $between2,
+            ]);
+        } catch (PDOException $e) {
+            throw new \Exception($e->getMessage());
         }
     }
 
@@ -460,15 +453,18 @@ class GetModel
             $sql =
                 self::buildSelect($relArray[0], $select)
                 . " $innerJoinText"
-                . " WHERE $linkTo BETWEEN '$between1' AND '$between2'"
+                . " WHERE $linkTo BETWEEN :between_from AND :between_to"
                 . ($filter !== '' ? " $filter" : '')
                 . self::buildOrder($orderBy, $orderMode)
                 . self::buildLimit($startAt, $endAt);
 
             try {
-                return self::execute($sql);
-            } catch (PDOException $Exception) {
-                return null;
+                return self::execute($sql, [
+                    ':between_from' => $between1,
+                    ':between_to' => $between2,
+                ]);
+            } catch (PDOException $e) {
+                throw new \Exception($e->getMessage());
             }
         } else {
             return null;
