@@ -24,6 +24,44 @@ class Connection
     }
 
     /**
+     * Validar que las columnas existen en la tabla.
+     *
+     * @param string $table
+     * @param array $columns
+     * @return array
+     */
+    public static function getColumnsData(string $table, array $columns): array
+    {
+        if (empty($columns)) {
+            return [];
+        }
+
+        $parts = explode('.', $table);
+        if (count($parts) > 1) {
+            $schema = $parts[0];
+            $tableName = $parts[1];
+        } else {
+            $schema = 'public';
+            $tableName = $table;
+        }
+
+        if ($columns === ['*']) {
+            $sql = 'SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = ? LIMIT 1';
+            $stmt = self::Connect()->prepare($sql);
+            $stmt->execute([$schema, $tableName]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+        $sql = "SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name IN ($placeholders)";
+
+        $stmt = self::Connect()->prepare($sql);
+        $stmt->execute(array_merge([$schema, $tableName], $columns));
+
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
      * Conexión a la base de datos mediante PDO.
      *
      * @return PDO

@@ -6,7 +6,7 @@ use Arancamon\ApiPhp\Models\GetModel;
 
 class GetController
 {
-    public static function GetData(
+    public static function find(
         string $table,
         string $select,
         ?string $orderBy,
@@ -14,12 +14,12 @@ class GetController
         ?int $startAt,
         ?int $endAt,
     ): void {
-        $response = GetModel::GetData($table, $select, $orderBy, $orderMode, $startAt, $endAt);
+        $response = GetModel::find($table, $select, $orderBy, $orderMode, $startAt, $endAt);
 
         self::response($response);
     }
 
-    public static function GetDataFilter(
+    public static function findWithFilters(
         string $table,
         string $select,
         string $linkTo,
@@ -29,12 +29,21 @@ class GetController
         ?int $startAt,
         ?int $endAt,
     ): void {
-        $response = GetModel::GetDataFilter($table, $select, $linkTo, $equalTo, $orderBy, $orderMode, $startAt, $endAt);
+        $response = GetModel::findWithFilters(
+            $table,
+            $select,
+            $linkTo,
+            $equalTo,
+            $orderBy,
+            $orderMode,
+            $startAt,
+            $endAt,
+        );
 
         self::response($response);
     }
 
-    public static function GetRelData(
+    public static function findRelations(
         string $rel,
         string $type,
         string $select,
@@ -43,12 +52,12 @@ class GetController
         ?int $startAt,
         ?int $endAt,
     ): void {
-        $response = GetModel::GetRelData($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt);
+        $response = GetModel::findRelations($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt);
 
         self::response($response);
     }
 
-    public static function GetRelDataFilter(
+    public static function findRelationsWithFilters(
         string $rel,
         string $type,
         string $select,
@@ -59,7 +68,7 @@ class GetController
         ?int $startAt,
         ?int $endAt,
     ): void {
-        $response = GetModel::GetRelDataFilter(
+        $response = GetModel::findRelationsWithFilters(
             $rel,
             $type,
             $select,
@@ -73,8 +82,36 @@ class GetController
 
         self::response($response);
     }
-    // Peticiones GET paar el buscador sin relacion 
-    public static function GetDataSearch(
+
+    // Peticiones GET para el buscador entre tablas relacionadas
+    public static function searchRelations(
+        string $rel,
+        string $type,
+        string $select,
+        string $linkTo,
+        mixed $search,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): void {
+        $response = GetModel::searchRelations(
+            $rel,
+            $type,
+            $select,
+            $linkTo,
+            $search,
+            $orderBy,
+            $orderMode,
+            $startAt,
+            $endAt,
+        );
+
+        self::response($response);
+    }
+
+    // Peticiones GET paar el buscador sin relacion
+    public static function search(
         string $table,
         string $select,
         string $linkTo,
@@ -84,7 +121,71 @@ class GetController
         ?int $startAt,
         ?int $endAt,
     ): void {
-        $response = GetModel::GetDataSearch($table, $select, $linkTo, $search, $orderBy, $orderMode, $startAt, $endAt);
+        $response = GetModel::search($table, $select, $linkTo, $search, $orderBy, $orderMode, $startAt, $endAt);
+
+        self::response($response);
+    }
+
+    // Peticiones GET para seleccion de rangos
+    public static function findBetween(
+        string $table,
+        string $select,
+        string $linkTo,
+        mixed $between1,
+        mixed $between2,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+        ?string $filterTo,
+        ?string $inTo,
+    ): void {
+        $response = GetModel::findBetween(
+            $table,
+            $select,
+            $linkTo,
+            $between1,
+            $between2,
+            $orderBy,
+            $orderMode,
+            $startAt,
+            $endAt,
+            $filterTo,
+            $inTo,
+        );
+
+        self::response($response);
+    }
+
+    // Peticiones GET para seleccion de rangos con relaciones
+    public static function findRelationsBetween(
+        string $rel,
+        string $type,
+        string $select,
+        string $linkTo,
+        mixed $between1,
+        mixed $between2,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+        ?string $filterTo,
+        ?string $inTo,
+    ): void {
+        $response = GetModel::findRelationsBetween(
+            $rel,
+            $type,
+            $select,
+            $linkTo,
+            $between1,
+            $between2,
+            $orderBy,
+            $orderMode,
+            $startAt,
+            $endAt,
+            $filterTo,
+            $inTo,
+        );
 
         self::response($response);
     }
