@@ -10,6 +10,8 @@ Custom PHP API (no framework). Dependency wiring and routing are manual.
 - `config/app.php` — loads `.env`, defines `config()` helper
 - `app/Controllers/RoutesController.php` — only controller; includes `app/routes/api.php`
 - `app/routes/api.php` — static JSON response, not a real router
+- `app/Database/` — database access layer (Connection, QueryBuilder, sub-builders)
+- `app/Models/` — domain models (GetModel delegates to Database layer)
 - `docs/generate.php` — Swagger/OpenAPI spec generator
 - `src/` — empty, unused
 - `storage/logs/php.log` — error log destination
@@ -25,15 +27,16 @@ Namespace is `Arancamon\ApiPhp\Controllers\` for controllers.
 ```bash
 php -S localhost:9090 -t public
 ```
+
 Shorthand: `bash serve.sh` (Linux) or `serve.bat` (Windows).
 
 ## Tests
 
 Framework: **Pest PHP 4.x**.
 
-No test files or config (`phpunit.xml`, `Pest.php`) exist yet. `.gitignore` excludes both `phpunit.xml` and `phpunit.xml.dist`.
+Tests in `tests/Unit/`. `.gitignore` excludes both `phpunit.xml` and `phpunit.xml.dist`, but `phpunit.xml.dist` exists locally for running tests.
 
-Run: `./vendor/bin/pest` (once configured).
+Run: `./vendor/bin/pest`
 
 ## OpenAPI / Swagger
 
