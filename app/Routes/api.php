@@ -27,7 +27,7 @@ if (count($routesArray) === 1 && isset($_SERVER['REQUEST_METHOD'])) {
             break;
 
         case 'POST':
-            $response = ['status' => 200, 'result' => 'POST'];
+            require __DIR__ . '/../Services/PostServices.php';
             break;
 
         case 'PUT':
