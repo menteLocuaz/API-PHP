@@ -1,7 +1,8 @@
 <?php
 
 use Arancamon\ApiPhp\Controllers\DeleteController;
-use Arancamon\ApiPhp\Models\Connection;
+use Arancamon\ApiPhp\Database\Connection;
+use Arancamon\ApiPhp\Security\AuthService;
 use Arancamon\ApiPhp\Security\TokenStatus;
 
 $table = explode('?', $routesArray[1])[0];
@@ -43,7 +44,7 @@ if (isset($_GET['id']) && isset($_GET['nameId'])) {
             $tableToken = $_GET['table'] ?? 'users';
             $suffix = $_GET['suffix'] ?? 'user';
 
-            $validate = Connection::tokenValidate($_GET['token'], $tableToken, $suffix);
+            $validate = AuthService::tokenValidate($_GET['token'], $tableToken, $suffix);
 
             if ($validate === TokenStatus::VALID) {
                 $response = new DeleteController();

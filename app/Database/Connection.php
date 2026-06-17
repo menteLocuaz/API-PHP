@@ -7,18 +7,22 @@ namespace Arancamon\ApiPhp\Database;
 use Arancamon\ApiPhp\Database\Contracts\ConnectionInterface;
 use PDO;
 use PDOException;
+use RuntimeException;
 
 class Connection implements ConnectionInterface
 {
     private static ?PDO $pdo = null;
 
+    /**
+     * Obtiene la conexión PDO reutilizable (Singleton).
+     */
     public static function connect(): PDO
     {
         if (self::$pdo !== null) {
             return self::$pdo;
         }
 
-        $db = self::getInfoDatabase();
+        $db = self::getConfig();
 
         $dsn = "pgsql:host={$db['host']};port={$db['port']};dbname={$db['database']}";
 
@@ -33,6 +37,7 @@ class Connection implements ConnectionInterface
 
             return self::$pdo;
         } catch (PDOException $e) {
+            self::$pdo = null;
             throw new PDOException(
                 'Error al conectar a la base de datos: ' . $e->getMessage(),
                 (int) $e->getCode(),
@@ -41,6 +46,9 @@ class Connection implements ConnectionInterface
         }
     }
 
+    /**
+     * Ejecuta una consulta SQL y devuelve los resultados.
+     */
     public static function execute(string $sql, array $params = []): array
     {
         $stmt = self::connect()->prepare($sql);
@@ -52,6 +60,41 @@ class Connection implements ConnectionInterface
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_CLASS);
+    }
+
+    /**
+     * Recupera los nombres de columna válidos de una tabla.
+     * Cuando $columns es ['*'] devuelve todas las columnas ordenadas por ordinal_position.
+     *
+     * @param string   $table   Nombre de la tabla (opcionalmente con esquema)
+     * @param string[] $columns Lista de columnas a validar
+     *
+     * @return string[]
+     */
+    public static function getColumnsData(string $table, array $columns): array
+    {
+        if (empty($columns)) {
+            return [];
+        }
+
+        [$schema, $table] = self::parseTable($table);
+
+        $pdo = self::connect();
+
+        if ($columns === ['*']) {
+            $sql = 'SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = ? ORDER BY ordinal_position';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$schema, $table]);
+            return $stmt->fetchAll(PDO::FETCH_COLUMN);
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+        $sql = "SELECT column_name FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name IN ($placeholders)";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(array_merge([$schema, $table], $columns));
+
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
     public static function beginTransaction(): bool
@@ -74,14 +117,30 @@ class Connection implements ConnectionInterface
         self::$pdo = null;
     }
 
-    private static function getInfoDatabase(): array
+    /**
+     * Configuración de la base de datos desde variables de entorno.
+     */
+    public static function getConfig(): array
     {
         return [
-            'host' => $_ENV['DB_HOST'] ?? 'localhost',
+            'host' => $_ENV['DB_HOST'] ?? throw new RuntimeException('DB_HOST no configurado'),
             'port' => $_ENV['DB_PORT'] ?? '5432',
-            'database' => $_ENV['DB_NAME'] ?? 'arctic',
-            'username' => $_ENV['DB_USER'] ?? 'sa',
-            'password' => $_ENV['DB_PASS'] ?? '52UYT',
+            'database' => $_ENV['DB_NAME'] ?? '',
+            'username' => $_ENV['DB_USER'] ?? '',
+            'password' => $_ENV['DB_PASS'] ?? '',
         ];
+    }
+
+    /**
+     * Divide una tabla con esquema (schema.table) en [schema, table].
+     * Si no tiene esquema, asume 'public'.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private static function parseTable(string $table): array
+    {
+        return str_contains($table, '.')
+            ? explode('.', $table, 2)
+            : ['public', $table];
     }
 }

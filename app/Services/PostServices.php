@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use Arancamon\ApiPhp\Controllers\PosController;
-use Arancamon\ApiPhp\Models\Connection;
+use Arancamon\ApiPhp\Database\Connection;
+use Arancamon\ApiPhp\Security\AuthService;
 use Arancamon\ApiPhp\Security\TokenStatus;
 
 $table = explode('?', $routesArray[1])[0];
@@ -57,7 +58,7 @@ if (isset($_POST) || file_get_contents('php://input') !== false) {
                 $tableToken = $_GET['table'] ?? 'users';
                 $suffix = $_GET['suffix'] ?? 'user';
 
-                $validate = Connection::tokenValidate($_GET['token'], $tableToken, $suffix);
+                $validate = AuthService::tokenValidate($_GET['token'], $tableToken, $suffix);
 
                 if ($validate === TokenStatus::VALID) {
                     $response->postData($table, $data);

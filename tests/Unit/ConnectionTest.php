@@ -2,26 +2,25 @@
 
 declare(strict_types=1);
 
-use Arancamon\ApiPhp\Models\Connection;
+use Arancamon\ApiPhp\Database\Connection;
 
 beforeEach(function () {
-    unset($_ENV['DB_HOST'], $_ENV['DB_PORT'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS'], $_ENV['API_KEY']);
+    unset($_ENV['DB_HOST'], $_ENV['DB_PORT'], $_ENV['DB_NAME'], $_ENV['DB_USER'], $_ENV['DB_PASS']);
+    Connection::reset();
 });
 
-// ─── databaseConfig ───────────────────────────────────────────────────────────
-
-test('databaseConfig throws when DB_HOST not set', function () {
-    Connection::databaseConfig();
+test('getConfig throws when DB_HOST not set', function () {
+    Connection::getConfig();
 })->throws(RuntimeException::class, 'DB_HOST no configurado');
 
-test('databaseConfig returns env values when set', function () {
+test('getConfig returns env values when set', function () {
     $_ENV['DB_HOST'] = '10.0.0.1';
     $_ENV['DB_PORT'] = '5433';
     $_ENV['DB_NAME'] = 'testdb';
     $_ENV['DB_USER'] = 'admin';
     $_ENV['DB_PASS'] = 'secret';
 
-    $info = Connection::databaseConfig();
+    $info = Connection::getConfig();
 
     expect($info)->toBe([
         'host' => '10.0.0.1',
@@ -32,10 +31,10 @@ test('databaseConfig returns env values when set', function () {
     ]);
 });
 
-test('databaseConfig uses defaults for optional fields', function () {
+test('getConfig uses defaults for optional fields', function () {
     $_ENV['DB_HOST'] = '192.168.1.1';
 
-    $info = Connection::databaseConfig();
+    $info = Connection::getConfig();
 
     expect($info['host'])->toBe('192.168.1.1');
     expect($info['port'])->toBe('5432');
@@ -44,25 +43,4 @@ test('databaseConfig uses defaults for optional fields', function () {
     expect($info['password'])->toBe('');
 });
 
-// ─── apiKey ───────────────────────────────────────────────────────────────────
-
-test('apiKey returns empty string when no env var set', function () {
-    $key = Connection::apiKey();
-
-    expect($key)->toBe('');
-});
-
-test('apiKey returns env value when set', function () {
-    $_ENV['API_KEY'] = 'sk-abc123';
-
-    $key = Connection::apiKey();
-
-    expect($key)->toBe('sk-abc123');
-});
-
-// ─── publicAccess ─────────────────────────────────────────────────────────────
-
-test('publicAccess returns array with empty string', function () {
-    expect(Connection::publicAccess())->toBe(['']);
-});
 
