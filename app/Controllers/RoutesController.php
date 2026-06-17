@@ -14,11 +14,10 @@ final class RoutesController
         $routeFile = dirname(__DIR__) . '/Routes/api.php';
 
         if (!file_exists($routeFile)) {
-            throw new \RuntimeException(
-                "The path file was not found: {$routeFile}"
-            );
+            throw new \RuntimeException("The path file was not found: {$routeFile}");
         }
 
         require_once $routeFile;
     }
 }
+

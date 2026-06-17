@@ -8,29 +8,35 @@ use Arancamon\ApiPhp\Database\Builders\RangeBuilder;
 use Arancamon\ApiPhp\Database\Builders\SearchBuilder;
 use Arancamon\ApiPhp\Database\Builders\WhereBuilder;
 use Arancamon\ApiPhp\Database\Connection;
+use Arancamon\ApiPhp\Database\Helpers\QueryHelper;
 use Arancamon\ApiPhp\Database\QueryBuilder;
-use PDOException;
 
 class GetModel
 {
-    public static function find($table, $select, $orderBy, $orderMode, $startAt, $endAt)
-    {
-        $sql = QueryBuilder::buildClauses($table, $select, $orderBy, $orderMode, $startAt, $endAt);
-
-        return Connection::execute($sql);
+    public static function find(
+        string $table,
+        string $select,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): array {
+        return Connection::execute(QueryBuilder::buildClauses($table, $select, $orderBy, $orderMode, $startAt, $endAt));
     }
 
-    public static function findWithFilters($table, $select, $linkTo, $equalTo, $orderBy, $orderMode, $startAt, $endAt)
-    {
+    public static function findWithFilters(
+        string $table,
+        string $select,
+        string $linkTo,
+        string $equalTo,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): array {
         $info = WhereBuilder::buildConditionsFromLinkTo($linkTo);
 
-        $fields = explode(',', $linkTo);
-        $values = explode('_', $equalTo);
-        $params = [];
-
-        foreach ($fields as $key => $field) {
-            $params[':' . $field] = $values[$key] ?? null;
-        }
+        $params = QueryHelper::buildParams(QueryHelper::split($linkTo), explode('_', $equalTo));
 
         $sql =
             QueryBuilder::buildSelect($table, $select)
@@ -41,12 +47,18 @@ class GetModel
         return Connection::execute($sql, $params);
     }
 
-    public static function findRelations($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt)
-    {
-        $relArray = explode(',', $rel);
-        $typeArray = explode(',', $type);
+    public static function findRelations(
+        string $rel,
+        string $type,
+        string $select,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): ?array {
+        [$relArray, $typeArray] = QueryHelper::parseRelations($rel, $type);
 
-        if (count($relArray) < 1) {
+        if ($relArray[0] === '') {
             return null;
         }
 
@@ -62,20 +74,19 @@ class GetModel
     }
 
     public static function findRelationsWithFilters(
-        $rel,
-        $type,
-        $select,
-        $linkTo,
-        $equalTo,
-        $orderBy,
-        $orderMode,
-        $startAt,
-        $endAt,
-    ) {
-        $relArray = explode(',', $rel);
-        $typeArray = explode(',', $type);
+        string $rel,
+        string $type,
+        string $select,
+        ?string $linkTo,
+        ?string $equalTo,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): ?array {
+        [$relArray, $typeArray] = QueryHelper::parseRelations($rel, $type);
 
-        if (count($relArray) < 1) {
+        if ($relArray[0] === '') {
             return null;
         }
 
@@ -104,26 +115,20 @@ class GetModel
     }
 
     public static function searchRelations(
-        $rel,
-        $type,
-        $select,
-        $linkTo,
-        $search,
-        $orderBy,
-        $orderMode,
-        $startAt,
-        $endAt,
-    ) {
-        $linkToArray = explode(',', $linkTo);
+        string $rel,
+        string $type,
+        string $select,
+        string $linkTo,
+        string $search,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): ?array {
+        $linkToArray = QueryHelper::splitAndValidate($linkTo);
+        $searchArray = QueryHelper::split($search);
 
-        foreach ($linkToArray as $lt) {
-            QueryBuilder::validateIdentifier($lt);
-        }
-
-        $searchArray = explode(',', $search);
-
-        $relArray = explode(',', $rel);
-        $typeArray = explode(',', $type);
+        [$relArray, $typeArray] = QueryHelper::parseRelations($rel, $type);
         $joinClause = QueryBuilder::buildJoin($relArray, $typeArray);
 
         if (count($relArray) > 1) {
@@ -144,18 +149,22 @@ class GetModel
                 $params[':' . $paramName] = $searchArray[$key + 1] ?? null;
             }
 
-            try {
-                return Connection::execute($sql, $params);
-            } catch (PDOException $e) {
-                throw new \Exception($e->getMessage());
-            }
+            return Connection::execute($sql, $params);
         }
 
         return null;
     }
 
-    public static function search($table, $select, $linkTo, $search, $orderBy, $orderMode, $startAt, $endAt)
-    {
+    public static function search(
+        string $table,
+        string $select,
+        string $linkTo,
+        string $search,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+    ): array {
         $conditions = SearchBuilder::buildConditions($linkTo);
 
         $sql =
@@ -165,63 +174,38 @@ class GetModel
             . QueryBuilder::buildOrder($orderBy, $orderMode)
             . QueryBuilder::buildLimit($startAt, $endAt);
 
-        try {
-            $searchValue = $search;
+        $searchValue = $search;
 
-            if (!mb_check_encoding($search ?? '', 'UTF-8')) {
-                $searchValue = iconv('ISO-8859-1', 'UTF-8//IGNORE', $search ?? '');
-            }
-
-            return Connection::execute($sql, [':search' => "%{$searchValue}%"]);
-        } catch (PDOException $e) {
-            throw new \Exception($e->getMessage());
+        if (!mb_check_encoding($search ?? '', 'UTF-8')) {
+            $searchValue = iconv('ISO-8859-1', 'UTF-8//IGNORE', $search ?? '');
         }
+
+        return Connection::execute($sql, [':search' => "%{$searchValue}%"]);
     }
 
     public static function findBetween(
-        $table,
-        $select,
-        $linkTo,
-        $between1,
-        $between2,
-        $orderBy,
-        $orderMode,
-        $startAt,
-        $endAt,
-        $filterTo,
-        $inTo,
-    ) {
-        $linkToArray = explode(',', $linkTo);
+        string $table,
+        string $select,
+        string $linkTo,
+        string $between1,
+        string $between2,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+        ?string $filterTo,
+        ?string $inTo,
+    ): ?array {
+        $linkToArray = QueryHelper::splitAndValidate($linkTo);
+        $filterToArray = $filterTo !== null ? QueryHelper::splitAndValidate($filterTo) : [];
 
-        foreach ($linkToArray as $lt) {
-            QueryBuilder::validateIdentifier($lt);
-        }
-
-        if ($filterTo !== null) {
-            $filterToArray = explode(',', $filterTo);
-
-            foreach ($filterToArray as $ft) {
-                QueryBuilder::validateIdentifier($ft);
-            }
-        } else {
-            $filterToArray = [];
-        }
-
-        $selectArray = array_unique(array_merge(
-            explode(',', $select),
-            $linkToArray,
-            $filterTo !== null ? explode(',', $filterTo) : [],
-        ));
+        $selectArray = array_unique(array_merge(QueryHelper::split($select), $linkToArray, $filterToArray));
 
         if (empty(Connection::getColumnsData($table, $selectArray))) {
             return null;
         }
 
-        $filter = '';
-
-        if ($filterTo !== null && $inTo !== null) {
-            $filter = RangeBuilder::buildInFilter($filterTo, $inTo);
-        }
+        $filter = QueryHelper::buildInFilter($filterTo, $inTo);
 
         $betweenColumn = $linkToArray[0];
         $condition = RangeBuilder::buildCondition($betweenColumn);
@@ -233,61 +217,31 @@ class GetModel
             . QueryBuilder::buildOrder($orderBy, $orderMode)
             . QueryBuilder::buildLimit($startAt, $endAt);
 
-        try {
-            return Connection::execute($sql, [
-                ':between_from' => $between1,
-                ':between_to' => $between2,
-            ]);
-        } catch (PDOException $e) {
-            throw new \Exception($e->getMessage());
-        }
+        return Connection::execute($sql, [
+            ':between_from' => $between1,
+            ':between_to' => $between2,
+        ]);
     }
 
     public static function findRelationsBetween(
-        $rel,
-        $type,
-        $select,
-        $linkTo,
-        $between1,
-        $between2,
-        $orderBy,
-        $orderMode,
-        $startAt,
-        $endAt,
-        $filterTo,
-        $inTo,
-    ) {
-        $linkToArray = explode(',', $linkTo);
+        string $rel,
+        string $type,
+        string $select,
+        string $linkTo,
+        string $between1,
+        string $between2,
+        ?string $orderBy,
+        ?string $orderMode,
+        ?int $startAt,
+        ?int $endAt,
+        ?string $filterTo,
+        ?string $inTo,
+    ): ?array {
+        $linkToArray = QueryHelper::splitAndValidate($linkTo);
+        $relArray = QueryHelper::splitAndValidate($rel);
+        $typeArray = QueryHelper::splitAndValidate($type);
 
-        foreach ($linkToArray as $lt) {
-            QueryBuilder::validateIdentifier($lt);
-        }
-
-        if ($filterTo !== null) {
-            $filterToArray = explode(',', $filterTo);
-
-            foreach ($filterToArray as $ft) {
-                QueryBuilder::validateIdentifier($ft);
-            }
-        } else {
-            $filterToArray = [];
-        }
-
-        $filter = '';
-
-        if ($filterTo !== null && $inTo !== null) {
-            $filter = RangeBuilder::buildInFilter($filterTo, $inTo);
-        }
-
-        $relArray = explode(',', $rel);
-        $typeArray = explode(',', $type);
-
-        foreach ($relArray as $relTable) {
-            QueryBuilder::validateIdentifier($relTable);
-        }
-        foreach ($typeArray as $typeVal) {
-            QueryBuilder::validateIdentifier($typeVal);
-        }
+        $filter = QueryHelper::buildInFilter($filterTo, $inTo);
 
         if (count($relArray) > 1) {
             foreach ($relArray as $value) {
@@ -309,14 +263,10 @@ class GetModel
                 . QueryBuilder::buildOrder($orderBy, $orderMode)
                 . QueryBuilder::buildLimit($startAt, $endAt);
 
-            try {
-                return Connection::execute($sql, [
-                    ':between_from' => $between1,
-                    ':between_to' => $between2,
-                ]);
-            } catch (PDOException $e) {
-                throw new \Exception($e->getMessage());
-            }
+            return Connection::execute($sql, [
+                ':between_from' => $between1,
+                ':between_to' => $between2,
+            ]);
         }
 
         return null;

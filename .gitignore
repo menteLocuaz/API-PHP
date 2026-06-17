@@ -13,6 +13,9 @@ skills-lock.json
 # Logs
 *.log
 
+# Rate limiter
+/storage/rate-limits/
+
 # Archivos temporales
 *.tmp
 *.temp
