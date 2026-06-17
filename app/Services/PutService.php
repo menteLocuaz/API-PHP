@@ -6,6 +6,7 @@ namespace Arancamon\ApiPhp\Services;
 
 use Arancamon\ApiPhp\Controllers\PutController;
 use Arancamon\ApiPhp\Database\Connection;
+use Arancamon\ApiPhp\Http\Response;
 use Arancamon\ApiPhp\Security\AuthService;
 use Arancamon\ApiPhp\Security\TokenStatus;
 
@@ -22,7 +23,7 @@ class PutService
         $columns = array_unique($columns);
 
         if (empty(Connection::getColumnsData($table, $columns))) {
-            $this->errorResponse('Error: Fields in the form do not match the database');
+            Response::error('Error: Fields in the form do not match the database');
             return;
         }
 
@@ -31,7 +32,7 @@ class PutService
                 $columns = [$getParams['except']];
 
                 if (empty(Connection::getColumnsData($table, $columns))) {
-                    $this->errorResponse('Error: Fields in the form do not match the database');
+                    Response::error('Error: Fields in the form do not match the database');
                     return;
                 }
 
@@ -44,23 +45,12 @@ class PutService
 
                 match ($validate) {
                     TokenStatus::VALID => PutController::putData($table, $data, $getParams['id'], $getParams['nameId']),
-                    TokenStatus::EXPIRED => $this->errorResponse('Error: The token has expired', 303),
-                    TokenStatus::INVALID => $this->errorResponse('Error: The user is not authorized'),
+                    TokenStatus::EXPIRED => Response::error('Error: The token has expired', 303),
+                    TokenStatus::INVALID => Response::error('Error: The user is not authorized'),
                 };
             }
         } else {
-            $this->errorResponse('Error: Authorization required');
+            Response::error('Error: Authorization required');
         }
-    }
-
-    private function errorResponse(string $message, int $status = 400): void
-    {
-        $json = [
-            'status' => $status,
-            'results' => $message,
-        ];
-
-        http_response_code($status);
-        echo json_encode($json);
     }
 }

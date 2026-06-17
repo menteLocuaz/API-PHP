@@ -14,7 +14,7 @@ test('response returns 404 JSON when response is empty', function () {
 
     expect($json)->toBe([
         'status' => 404,
-        'results' => 'Not found',
+        'results' => 'Not Found',
     ]);
 });
 

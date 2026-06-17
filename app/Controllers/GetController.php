@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Arancamon\ApiPhp\Controllers;
 
+use Arancamon\ApiPhp\Http\Response;
 use Arancamon\ApiPhp\Models\GetModel;
 
 class GetController
@@ -15,7 +18,6 @@ class GetController
         ?int $endAt,
     ): void {
         $response = GetModel::find($table, $select, $orderBy, $orderMode, $startAt, $endAt);
-
         self::response($response);
     }
 
@@ -39,7 +41,6 @@ class GetController
             $startAt,
             $endAt,
         );
-
         self::response($response);
     }
 
@@ -53,7 +54,6 @@ class GetController
         ?int $endAt,
     ): void {
         $response = GetModel::findRelations($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt);
-
         self::response($response);
     }
 
@@ -79,11 +79,9 @@ class GetController
             $startAt,
             $endAt,
         );
-
         self::response($response);
     }
 
-    // Peticiones GET para el buscador entre tablas relacionadas
     public static function searchRelations(
         string $rel,
         string $type,
@@ -106,11 +104,9 @@ class GetController
             $startAt,
             $endAt,
         );
-
         self::response($response);
     }
 
-    // Peticiones GET paar el buscador sin relacion
     public static function search(
         string $table,
         string $select,
@@ -122,11 +118,9 @@ class GetController
         ?int $endAt,
     ): void {
         $response = GetModel::search($table, $select, $linkTo, $search, $orderBy, $orderMode, $startAt, $endAt);
-
         self::response($response);
     }
 
-    // Peticiones GET para seleccion de rangos
     public static function findBetween(
         string $table,
         string $select,
@@ -153,11 +147,9 @@ class GetController
             $filterTo,
             $inTo,
         );
-
         self::response($response);
     }
 
-    // Peticiones GET para seleccion de rangos con relaciones
     public static function findRelationsBetween(
         string $rel,
         string $type,
@@ -186,34 +178,15 @@ class GetController
             $filterTo,
             $inTo,
         );
-
         self::response($response);
     }
 
-    // Repuesta del controlador
-    private static function response(array $response): void
+    private static function response(?array $response): void
     {
         if (!empty($response)) {
-            $status = 200;
-
-            $json = [
-                'status' => $status,
-                'total' => count($response),
-                'results' => $response,
-            ];
+            Response::json($response);
         } else {
-            $status = 404;
-
-            $json = [
-                'status' => $status,
-                'results' => 'Not found',
-            ];
+            Response::notFound();
         }
-
-        http_response_code($status);
-
-        header('Content-Type: application/json');
-
-        echo json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 }
