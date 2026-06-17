@@ -9,13 +9,13 @@ use Arancamon\ApiPhp\Models\PutModel;
 
 class PutController
 {
-    public static function putData(string $table, array $data, mixed $id, string $nameId): void
+    public function putData(string $table, array $data, mixed $id, string $nameId): void
     {
         $response = PutModel::putData($table, $data, $id, $nameId);
-        self::response($response);
+        $this->response($response);
     }
 
-    private static function response(?array $response): void
+    private function response(?array $response): void
     {
         if (!empty($response)) {
             Response::json($response);

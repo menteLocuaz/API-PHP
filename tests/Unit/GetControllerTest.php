@@ -5,9 +5,11 @@ declare(strict_types=1);
 use Arancamon\ApiPhp\Controllers\GetController;
 
 test('response returns 404 JSON when response is empty', function () {
+    $controller = new GetController();
     $method = new ReflectionMethod(GetController::class, 'response');
+
     ob_start();
-    $method->invoke(null, []);
+    $method->invoke($controller, []);
 
     $output = ob_get_clean();
     $json = json_decode($output, true);
@@ -19,12 +21,13 @@ test('response returns 404 JSON when response is empty', function () {
 });
 
 test('response returns 200 JSON with results when response is not empty', function () {
+    $controller = new GetController();
     $method = new ReflectionMethod(GetController::class, 'response');
 
     $data = [['id' => 1, 'name' => 'Test']];
 
     ob_start();
-    $method->invoke(null, $data);
+    $method->invoke($controller, $data);
 
     $output = ob_get_clean();
     $json = json_decode($output, true);
@@ -36,10 +39,11 @@ test('response returns 200 JSON with results when response is not empty', functi
 });
 
 test('response produces valid JSON', function () {
+    $controller = new GetController();
     $method = new ReflectionMethod(GetController::class, 'response');
 
     ob_start();
-    $method->invoke(null, []);
+    $method->invoke($controller, []);
     $output = ob_get_clean();
 
     expect(json_decode($output))->not->toBeNull();
