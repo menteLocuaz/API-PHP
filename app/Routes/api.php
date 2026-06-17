@@ -1,65 +1,60 @@
 <?php
 
-// Parsear la URL solicitada
-$uri = trim($_SERVER['REQUEST_URI'], '/');
-$routesArray = explode('/', $uri);
+use Arancamon\ApiPhp\Controllers\GetController;
+use Arancamon\ApiPhp\Models\Connection;
+
+$routesArray = explode('/', $_SERVER['REQUEST_URI']);
 $routesArray = array_filter($routesArray);
 
-// Si no se indica ninguna ruta
-if (empty($routesArray)) {
-    $response = [
+if (count($routesArray) == 0) {
+    $json = [
         'status' => 404,
-        'message' => 'Not Found',
+        'results' => 'Not Found',
     ];
-    http_response_code($response['status']);
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit();
+
+    http_response_code($json['status']);
+    echo json_encode($json);
+
+    return;
 }
 
-// Si hay una ruta principal y se ha enviado un método HTTP
-if (count($routesArray) === 1 && isset($_SERVER['REQUEST_METHOD'])) {
-    $method = $_SERVER['REQUEST_METHOD'];
+if (count($routesArray) == 1 && isset($_SERVER['REQUEST_METHOD'])) {
+    $table = explode('?', $routesArray[1])[0];
 
-    switch ($method) {
-        case 'GET':
-            require __DIR__ . '/../Services/GetServices.php';
-            break;
+    if (
+        !isset(getallheaders()['Authorization'])
+        || getallheaders()['Authorization'] != Connection::apiKey()
+    ) {
+        if (in_array($table, Connection::publicAccess()) == 0) {
+            $json = [
+                'status' => 400,
+                'results' => 'You are not authorized to make this request',
+            ];
 
-        case 'POST':
-            require __DIR__ . '/../Services/PostServices.php';
-            break;
+            http_response_code($json['status']);
+            echo json_encode($json);
 
-        case 'PUT':
-            $response = ['status' => 200, 'result' => 'PUT'];
-            break;
+            return;
+        }
 
-        case 'DELETE':
-            $response = ['status' => 200, 'result' => 'DELETE'];
-            break;
+        GetController::find($table, '*', null, null, null, null);
 
-        case 'PATCH':
-            $response = ['status' => 200, 'result' => 'PATCH'];
-            break;
-
-        default:
-            $response = ['status' => 405, 'message' => 'Method Not Allowed'];
-            break;
+        return;
     }
 
-    // Establecer encabezados y enviar respuesta
-    http_response_code($response['status']);
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit();
-}
+    if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        include __DIR__ . '/../Services/GetServices.php';
+    }
 
-// Ruta desconocida o no implementada
-$response = [
-    'status' => 404,
-    'message' => 'Endpoint not found',
-];
-http_response_code($response['status']);
-header('Content-Type: application/json');
-echo json_encode($response);
-exit();
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        include __DIR__ . '/../Services/PostServices.php';
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'PUT') {
+        include __DIR__ . '/../Services/PutServices.php';
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'DELETE') {
+        include __DIR__ . '/../Services/DeleteServices.php';
+    }
+}

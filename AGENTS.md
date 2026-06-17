@@ -2,25 +2,21 @@
 
 ## Project
 
-Custom PHP API (no framework). Dependency wiring and routing are manual.
+Custom PHP API (no framework). Manual wiring throughout.
 
-## Structure
+## Entry Point
 
-- `public/index.php` — entry point
-- `config/app.php` — loads `.env`, defines `config()` helper
-- `app/Controllers/RoutesController.php` — only controller; includes `app/routes/api.php`
-- `app/routes/api.php` — static JSON response, not a real router
-- `app/Database/` — database access layer (Connection, QueryBuilder, sub-builders)
-- `app/Models/` — domain models (GetModel delegates to Database layer)
-- `docs/generate.php` — Swagger/OpenAPI spec generator
-- `src/` — empty, unused
-- `storage/logs/php.log` — error log destination
+`public/index.php` loads `vendor/autoload.php`, then `config/app.php` (which also requires autoload a second time), calls `Connection::Connect()` (will fail without PostgreSQL running), then dispatches `RoutesController` → `app/Routes/api.php`.
 
 ## PSR-4
 
 `Arancamon\ApiPhp\` → `app/`
 
-Namespace is `Arancamon\ApiPhp\Controllers\` for controllers.
+## Architecture
+
+`app/Routes/api.php` — first URI segment is the table name. Dispatches to HTTP-method Services files (`GetServices.php`, `PostServices.php`, etc).
+
+Layer chain: `Routes/api.php` → `Services/*.php` → `Controllers/*.php` → `Models/*.php` → `Database/*.php` (PDO)
 
 ## Dev Server
 
@@ -30,27 +26,31 @@ php -S localhost:9090 -t public
 
 Shorthand: `bash serve.sh` (Linux) or `serve.bat` (Windows).
 
+Apache rewrite rules in `public/.htaccess` also route everything to `public/index.php`.
+
 ## Tests
 
-Framework: **Pest PHP 4.x**.
+**Pest PHP 4.x** in `tests/Unit/`. Run: `./vendor/bin/pest`
 
-Tests in `tests/Unit/`. `.gitignore` excludes both `phpunit.xml` and `phpunit.xml.dist`, but `phpunit.xml.dist` exists locally for running tests.
-
-Run: `./vendor/bin/pest`
+`phpunit.xml.dist` exists locally but is `.gitignore`d.
 
 ## OpenAPI / Swagger
 
-Generate: `php docs/generate.php` or `./vendor/bin/openapi app/ --output public/swagger/openapi.json`
+```bash
+php docs/generate.php
+# or
+./vendor/bin/openapi app/ --output public/swagger/openapi.json
+```
 
-Uses PHP 8 attributes scanned from `app/`. Output: `public/swagger/openapi.json`
+PHP 8 attributes scanned from `app/`. Output: `public/swagger/openapi.json`.
+
+## Database
+
+PostgreSQL 16 via `docker-compose.yml` (`postgres:16`, port 5432, `arctic`/`sa`/`52UYT`).
 
 ## Known Issues
 
-- `public/index.php` — autoloading happens before `use` statement, but the class `"RoutesController"` is not found at runtime (`storage/logs/php.log`). The `config/app.php` also double-requires `vendor/autoload.php`.
-- `composer.lock` is in `.gitignore` (unusual — builds not reproducible).
-- No database is configured despite `illuminate/database` being installed.
-- Lowercase `app/controllers/` (empty) and uppercase `app/Controllers/` (used) coexist — follow the PSR-4 namespace convention.
-
-## PHP
-
-Requires **PHP ^8.3** (from dependency constraints). Current env: **PHP 8.5**.
+- `config/app.php` double-requires `vendor/autoload.php` (already loaded by `public/index.php`).
+- `Connection::connect()` in `public/index.php` throws if PostgreSQL is not running — startup fails.
+- `composer.lock` is `.gitignore`d — builds not reproducible.
+- `app/Database/QueryOptions.php` exists as a DTO but is unused by the current code.
