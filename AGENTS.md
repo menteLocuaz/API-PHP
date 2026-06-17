@@ -1,38 +1,57 @@
 # AGENTS.md
 
-## Project
-
 Custom PHP API (no framework). Manual wiring throughout.
 
 ## Entry Point
 
-`public/index.php` loads `vendor/autoload.php`, then `config/app.php` (which also requires autoload a second time), calls `Connection::Connect()` (will fail without PostgreSQL running), then dispatches `RoutesController` → `app/Routes/api.php`.
+`public/index.php` → `vendor/autoload.php` → `bootstrap/app.php` (dotenv, `config()` helper, error config, timezone) → `RoutesController` → `app/Routes/api.php`. Connection is lazy — first DB access triggers PDO singleton.
 
 ## PSR-4
 
 `Arancamon\ApiPhp\` → `app/`
 
-## Architecture
+`declare(strict_types=1)` used throughout.
 
-`app/Routes/api.php` — first URI segment is the table name. Dispatches to HTTP-method Services files (`GetServices.php`, `PostServices.php`, etc).
+## Routing & Architecture
 
-Layer chain: `Routes/api.php` → `Services/*.php` → `Controllers/*.php` → `Models/*.php` → `Database/*.php` (PDO)
+`app/Routes/api.php` — first URI segment is the table name. Dispatch per HTTP method via `match` to Services files.
+
+Layer chain: `Routes/api.php` → `Services/*.php` → `Controllers/*.php` → `Models/*.php` → `Database/*.php` (custom SQL QueryBuilder + Connection PDO)
+
+The `QueryBuilder` delegates to builders in `app/Database/Builders/`: `SelectBuilder`, `WhereBuilder`, `JoinBuilder`, `RangeBuilder`, `SearchBuilder`.
+
+Naming quirk: controller/model files are `PosController.php` / `PosModel.php` (apparent typo — not `Post`).
+
+## Auth
+
+- **Rate limiter**: `app/Middlewares/RateLimiterMiddleware.php` runs first in `api.php`. File-based, window per IP. Configured via `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW` env vars (default 60 req/60s). Data lives in `storage/rate-limits/`.
+- **API key**: `Authorization` header compared to `API_KEY` env var (`app/Security/AuthService.php:apiKey()`).
+- **Public tables**: tables listed in `AuthService::publicAccess()` (currently `['']`) can be read without a key.
+- **JWT**: `JwtService::jwt()` generates payload; `AuthService::tokenValidate()` checks token against DB columns `token_{suffix}` / `token_exp_{suffix}`.
+
+## Response Format
+
+All JSON via `app/Http/Response.php`:
+```json
+{ "status": 200, "results": [...], "total": N }
+```
 
 ## Dev Server
 
 ```bash
 php -S localhost:9090 -t public
+# or: bash serve.sh
 ```
-
-Shorthand: `bash serve.sh` (Linux) or `serve.bat` (Windows).
 
 Apache rewrite rules in `public/.htaccess` also route everything to `public/index.php`.
 
 ## Tests
 
-**Pest PHP 4.x** in `tests/Unit/`. Run: `./vendor/bin/pest`
+**Pest PHP 4.x** in `tests/Unit/`. Run:
 
-`phpunit.xml.dist` exists locally but is `.gitignore`d.
+```bash
+./vendor/bin/pest
+```
 
 ## OpenAPI / Swagger
 
@@ -42,15 +61,20 @@ php docs/generate.php
 ./vendor/bin/openapi app/ --output public/swagger/openapi.json
 ```
 
-PHP 8 attributes scanned from `app/`. Output: `public/swagger/openapi.json`.
+Output: `public/swagger/openapi.json`.
 
 ## Database
 
-PostgreSQL 16 via `docker-compose.yml` (`postgres:16`, port 5432, `arctic`/`sa`/`52UYT`).
+PostgreSQL 16 via `docker-compose.yml` (port 5432, `arctic`/`sa`/`52UYT`).
+
+## Storage
+
+PHP error logs → `storage/logs/php.log`.
 
 ## Known Issues
 
-- `config/app.php` double-requires `vendor/autoload.php` (already loaded by `public/index.php`).
-- `Connection::connect()` in `public/index.php` throws if PostgreSQL is not running — startup fails.
+- `config/app.php` is dead code (bootstrap moved to `bootstrap/app.php`).
+- `Connection::connect()` throws if PostgreSQL is not running — startup fails.
 - `composer.lock` is `.gitignore`d — builds not reproducible.
-- `app/Database/QueryOptions.php` exists as a DTO but is unused by the current code.
+- `app/Database/QueryOptions.php` DTO unused by current code.
+- `app/Views/` is empty.

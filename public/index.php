@@ -1,27 +1,18 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
-$app = require __DIR__ . '/../config/app.php';
+declare(strict_types=1);
 
-ini_set('display_errors', 1);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/../storage/logs/php.log');
-error_reporting(E_ALL);
+require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../bootstrap/app.php';
 
 use Arancamon\ApiPhp\Controllers\RoutesController;
-use Arancamon\ApiPhp\Database\Connection;
+use Arancamon\ApiPhp\Http\Cors;
 
-/*=============================================
- * CORS
- * =============================================*/
+Cors::send();
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
-header('content-type: application/json; charset=utf-8');
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
-// COnexion
-Connection::connect();
-
-$router = new RoutesController();
-$router->index();
+(new RoutesController())->index();
