@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Arancamon\ApiPhp\Models;
 
+use Arancamon\ApiPhp\Database\Connection;
 use PDO;
 
 class PosModel

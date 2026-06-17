@@ -9,7 +9,7 @@ ini_set('error_log', __DIR__ . '/../storage/logs/php.log');
 error_reporting(E_ALL);
 
 use Arancamon\ApiPhp\Controllers\RoutesController;
-use Arancamon\ApiPhp\Models\Connection;
+use Arancamon\ApiPhp\Database\Connection;
 
 /*=============================================
  * CORS

@@ -9,7 +9,6 @@ use Arancamon\ApiPhp\Database\Builders\SearchBuilder;
 use Arancamon\ApiPhp\Database\Builders\WhereBuilder;
 use Arancamon\ApiPhp\Database\Connection;
 use Arancamon\ApiPhp\Database\QueryBuilder;
-use Arancamon\ApiPhp\Models\Connection as ModelsConnection;
 use PDOException;
 
 class GetModel
@@ -214,7 +213,7 @@ class GetModel
             $filterTo !== null ? explode(',', $filterTo) : [],
         ));
 
-        if (empty(ModelsConnection::getColumnsData($table, $selectArray))) {
+        if (empty(Connection::getColumnsData($table, $selectArray))) {
             return null;
         }
 
@@ -292,7 +291,7 @@ class GetModel
 
         if (count($relArray) > 1) {
             foreach ($relArray as $value) {
-                if (empty(ModelsConnection::getColumnsData($value, ['*']))) {
+                if (empty(Connection::getColumnsData($value, ['*']))) {
                     return null;
                 }
             }

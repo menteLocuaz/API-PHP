@@ -1,7 +1,7 @@
 <?php
 
 use Arancamon\ApiPhp\Controllers\GetController;
-use Arancamon\ApiPhp\Models\Connection;
+use Arancamon\ApiPhp\Security\AuthService;
 
 $routesArray = explode('/', $_SERVER['REQUEST_URI']);
 $routesArray = array_filter($routesArray);
@@ -23,9 +23,9 @@ if (count($routesArray) == 1 && isset($_SERVER['REQUEST_METHOD'])) {
 
     if (
         !isset(getallheaders()['Authorization'])
-        || getallheaders()['Authorization'] != Connection::apiKey()
+        || getallheaders()['Authorization'] != AuthService::apiKey()
     ) {
-        if (in_array($table, Connection::publicAccess()) == 0) {
+        if (in_array($table, AuthService::publicAccess()) == 0) {
             $json = [
                 'status' => 400,
                 'results' => 'You are not authorized to make this request',
