@@ -1,6 +1,7 @@
 <?php
 
 use Arancamon\ApiPhp\Controllers\GetController;
+use Arancamon\ApiPhp\Http\Response;
 use Arancamon\ApiPhp\Security\AuthService;
 use Arancamon\ApiPhp\Services\DeleteService;
 use Arancamon\ApiPhp\Services\GetService;
@@ -11,14 +12,7 @@ $routesArray = explode('/', $_SERVER['REQUEST_URI']);
 $routesArray = array_filter($routesArray);
 
 if (count($routesArray) == 0) {
-    $json = [
-        'status' => 404,
-        'results' => 'Not Found',
-    ];
-
-    http_response_code($json['status']);
-    echo json_encode($json);
-
+    Response::notFound();
     return;
 }
 
@@ -30,14 +24,7 @@ if (count($routesArray) == 1 && isset($_SERVER['REQUEST_METHOD'])) {
         || getallheaders()['Authorization'] != AuthService::apiKey()
     ) {
         if (in_array($table, AuthService::publicAccess()) == 0) {
-            $json = [
-                'status' => 400,
-                'results' => 'You are not authorized to make this request',
-            ];
-
-            http_response_code($json['status']);
-            echo json_encode($json);
-
+            Response::error('You are not authorized to make this request');
             return;
         }
 
@@ -60,9 +47,6 @@ if (count($routesArray) == 1 && isset($_SERVER['REQUEST_METHOD'])) {
             (new PutService())->handle($table, $data, $_GET);
         })(),
         'DELETE' => (new DeleteService())->handle($table, $_GET),
-        default => (function () {
-            http_response_code(405);
-            echo json_encode(['status' => 405, 'results' => 'Method Not Allowed']);
-        })(),
+        default => Response::error('Method Not Allowed', 405),
     };
 }

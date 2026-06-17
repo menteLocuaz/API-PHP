@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Arancamon\ApiPhp\Controllers;
 
+use Arancamon\ApiPhp\Http\Response;
 use Arancamon\ApiPhp\Models\GetModel;
 use Arancamon\ApiPhp\Models\PosModel;
 use Arancamon\ApiPhp\Models\PutModel;
@@ -15,22 +16,17 @@ class PosController
     public static function postData(string $table, array $data): void
     {
         $response = PosModel::postData($table, $data);
-
-        $return = new self();
-        $return->fncResponse($response, null, null);
+        self::response($response);
     }
 
     public static function postRegister(string $table, array $data, string $suffix): void
     {
         if (isset($data['password_' . $suffix]) && $data['password_' . $suffix] != null) {
             $crypt = crypt($data['password_' . $suffix], '$2a$07$azybxcags23425sdg23sdfhsd$');
-
             $data['password_' . $suffix] = $crypt;
 
             $response = PosModel::postData($table, $data);
-
-            $return = new self();
-            $return->fncResponse($response, null, $suffix);
+            self::response($response, null, $suffix);
         } else {
             $response = PosModel::postData($table, $data);
 
@@ -48,7 +44,6 @@ class PosController
 
                 if (!empty($getResponse)) {
                     $token = JwtService::jwt($getResponse[0]->{'id_' . $suffix}, $getResponse[0]->{'email_' . $suffix});
-
                     $jwt = JWT::encode($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
 
                     $update = PutModel::putData(
@@ -65,8 +60,7 @@ class PosController
                         $getResponse[0]->{'token_' . $suffix} = $jwt;
                         $getResponse[0]->{'token_exp_' . $suffix} = $token['exp'];
 
-                        $return = new self();
-                        $return->fncResponse($getResponse, null, $suffix);
+                        self::response($getResponse, null, $suffix);
                     }
                 }
             }
@@ -92,7 +86,6 @@ class PosController
 
                 if ($response[0]->{'password_' . $suffix} == $crypt) {
                     $token = JwtService::jwt($response[0]->{'id_' . $suffix}, $response[0]->{'email_' . $suffix});
-
                     $jwt = JWT::encode($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
 
                     $update = PutModel::putData(
@@ -109,16 +102,13 @@ class PosController
                         $response[0]->{'token_' . $suffix} = $jwt;
                         $response[0]->{'token_exp_' . $suffix} = $token['exp'];
 
-                        $return = new self();
-                        $return->fncResponse($response, null, $suffix);
+                        self::response($response, null, $suffix);
                     }
                 } else {
-                    $return = new self();
-                    $return->fncResponse(null, 'Wrong password', $suffix);
+                    self::response(null, 'Wrong password', $suffix);
                 }
             } else {
                 $token = JwtService::jwt($response[0]->{'id_' . $suffix}, $response[0]->{'email_' . $suffix});
-
                 $jwt = JWT::encode($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
 
                 $update = PutModel::putData(
@@ -135,44 +125,28 @@ class PosController
                     $response[0]->{'token_' . $suffix} = $jwt;
                     $response[0]->{'token_exp_' . $suffix} = $token['exp'];
 
-                    $return = new self();
-                    $return->fncResponse($response, null, $suffix);
+                    self::response($response, null, $suffix);
                 }
             }
         } else {
-            $return = new self();
-            $return->fncResponse(null, 'Wrong email', $suffix);
+            self::response(null, 'Wrong email', $suffix);
         }
     }
 
-    public function fncResponse(mixed $response, ?string $error, ?string $suffix): void
+    private static function response(mixed $response, ?string $error = null, ?string $suffix = null): void
     {
         if (!empty($response)) {
-            if (isset($response[0]->{'password_' . $suffix})) {
+            if ($suffix && isset($response[0]->{'password_' . $suffix})) {
                 unset($response[0]->{'password_' . $suffix});
             }
 
-            $json = [
-                'status' => 200,
-                'results' => $response,
-            ];
+            Response::json($response);
         } else {
-            if ($error != null) {
-                $json = [
-                    'status' => 400,
-                    'results' => $error,
-                ];
+            if ($error !== null) {
+                Response::error($error);
             } else {
-                $json = [
-                    'status' => 404,
-                    'results' => 'Not Found',
-                    'method' => 'post',
-                ];
+                Response::notFound('post');
             }
         }
-
-        http_response_code($json['status']);
-        header('Content-Type: application/json');
-        echo json_encode($json, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 }
