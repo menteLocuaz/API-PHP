@@ -2,7 +2,7 @@
 
 use Arancamon\ApiPhp\Controllers\GetController;
 
-$table = explode('?', $routesArray[0])[0];
+$table = explode('?', $routesArray[1])[0];
 
 $params = [
     'select' => $_GET['select'] ?? '*',

@@ -11,7 +11,17 @@ error_reporting(E_ALL);
 use Arancamon\ApiPhp\Controllers\RoutesController;
 use Arancamon\ApiPhp\Models\Connection;
 
-Connection::Connect();
+/*=============================================
+ * CORS
+ * =============================================*/
+
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('content-type: application/json; charset=utf-8');
+
+// COnexion
+Connection::connect();
 
 $router = new RoutesController();
 $router->index();
