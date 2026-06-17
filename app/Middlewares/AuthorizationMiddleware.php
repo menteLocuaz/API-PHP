@@ -20,7 +20,7 @@ class AuthorizationMiddleware
         }
 
         if (in_array($table, AuthService::publicAccess(), true)) {
-            GetController::find($table, '*', null, null, null, null);
+            (new GetController())->find($table, '*', null, null, null, null);
 
             return false;
         }

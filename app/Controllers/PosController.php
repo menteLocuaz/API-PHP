@@ -13,20 +13,20 @@ use Firebase\JWT\JWT;
 
 class PosController
 {
-    public static function postData(string $table, array $data): void
+    public function postData(string $table, array $data): void
     {
         $response = PosModel::postData($table, $data);
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function postRegister(string $table, array $data, string $suffix): void
+    public function postRegister(string $table, array $data, string $suffix): void
     {
         if (isset($data['password_' . $suffix]) && $data['password_' . $suffix] != null) {
             $crypt = crypt($data['password_' . $suffix], '$2a$07$azybxcags23425sdg23sdfhsd$');
             $data['password_' . $suffix] = $crypt;
 
             $response = PosModel::postData($table, $data);
-            self::response($response, null, $suffix);
+            $this->response($response, null, $suffix);
         } else {
             $response = PosModel::postData($table, $data);
 
@@ -60,14 +60,14 @@ class PosController
                         $getResponse[0]->{'token_' . $suffix} = $jwt;
                         $getResponse[0]->{'token_exp_' . $suffix} = $token['exp'];
 
-                        self::response($getResponse, null, $suffix);
+                        $this->response($getResponse, null, $suffix);
                     }
                 }
             }
         }
     }
 
-    public static function postLogin(string $table, array $data, string $suffix): void
+    public function postLogin(string $table, array $data, string $suffix): void
     {
         $response = GetModel::findWithFilters(
             $table,
@@ -102,10 +102,10 @@ class PosController
                         $response[0]->{'token_' . $suffix} = $jwt;
                         $response[0]->{'token_exp_' . $suffix} = $token['exp'];
 
-                        self::response($response, null, $suffix);
+                        $this->response($response, null, $suffix);
                     }
                 } else {
-                    self::response(null, 'Wrong password', $suffix);
+                    $this->response(null, 'Wrong password', $suffix);
                 }
             } else {
                 $token = JwtService::jwt($response[0]->{'id_' . $suffix}, $response[0]->{'email_' . $suffix});
@@ -125,15 +125,15 @@ class PosController
                     $response[0]->{'token_' . $suffix} = $jwt;
                     $response[0]->{'token_exp_' . $suffix} = $token['exp'];
 
-                    self::response($response, null, $suffix);
+                    $this->response($response, null, $suffix);
                 }
             }
         } else {
-            self::response(null, 'Wrong email', $suffix);
+            $this->response(null, 'Wrong email', $suffix);
         }
     }
 
-    private static function response(mixed $response, ?string $error = null, ?string $suffix = null): void
+    private function response(mixed $response, ?string $error = null, ?string $suffix = null): void
     {
         if (!empty($response)) {
             if ($suffix && isset($response[0]->{'password_' . $suffix})) {

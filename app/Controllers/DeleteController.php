@@ -9,13 +9,13 @@ use Arancamon\ApiPhp\Models\DeleteModel;
 
 class DeleteController
 {
-    public static function deleteData(string $table, mixed $id, string $nameId): void
+    public function deleteData(string $table, mixed $id, string $nameId): void
     {
         $response = DeleteModel::deleteData($table, $id, $nameId);
-        self::response($response);
+        $this->response($response);
     }
 
-    private static function response(?array $response): void
+    private function response(?array $response): void
     {
         if (!empty($response)) {
             Response::json($response);

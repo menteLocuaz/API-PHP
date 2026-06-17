@@ -9,7 +9,7 @@ use Arancamon\ApiPhp\Models\GetModel;
 
 class GetController
 {
-    public static function find(
+    public function find(
         string $table,
         string $select,
         ?string $orderBy,
@@ -18,10 +18,10 @@ class GetController
         ?int $endAt,
     ): void {
         $response = GetModel::find($table, $select, $orderBy, $orderMode, $startAt, $endAt);
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function findWithFilters(
+    public function findWithFilters(
         string $table,
         string $select,
         string $linkTo,
@@ -41,10 +41,10 @@ class GetController
             $startAt,
             $endAt,
         );
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function findRelations(
+    public function findRelations(
         string $rel,
         string $type,
         string $select,
@@ -54,10 +54,10 @@ class GetController
         ?int $endAt,
     ): void {
         $response = GetModel::findRelations($rel, $type, $select, $orderBy, $orderMode, $startAt, $endAt);
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function findRelationsWithFilters(
+    public function findRelationsWithFilters(
         string $rel,
         string $type,
         string $select,
@@ -79,10 +79,10 @@ class GetController
             $startAt,
             $endAt,
         );
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function searchRelations(
+    public function searchRelations(
         string $rel,
         string $type,
         string $select,
@@ -104,10 +104,10 @@ class GetController
             $startAt,
             $endAt,
         );
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function search(
+    public function search(
         string $table,
         string $select,
         string $linkTo,
@@ -118,10 +118,10 @@ class GetController
         ?int $endAt,
     ): void {
         $response = GetModel::search($table, $select, $linkTo, $search, $orderBy, $orderMode, $startAt, $endAt);
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function findBetween(
+    public function findBetween(
         string $table,
         string $select,
         string $linkTo,
@@ -147,10 +147,10 @@ class GetController
             $filterTo,
             $inTo,
         );
-        self::response($response);
+        $this->response($response);
     }
 
-    public static function findRelationsBetween(
+    public function findRelationsBetween(
         string $rel,
         string $type,
         string $select,
@@ -178,10 +178,10 @@ class GetController
             $filterTo,
             $inTo,
         );
-        self::response($response);
+        $this->response($response);
     }
 
-    private static function response(?array $response): void
+    private function response(?array $response): void
     {
         if (!empty($response)) {
             Response::json($response);

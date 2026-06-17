@@ -27,6 +27,8 @@ class PutService
             return;
         }
 
+        $controller = new PutController();
+
         if (isset($getParams['token'])) {
             if ($getParams['token'] === 'no' && isset($getParams['except'])) {
                 $columns = [$getParams['except']];
@@ -36,7 +38,7 @@ class PutService
                     return;
                 }
 
-                PutController::putData($table, $data, $getParams['id'], $getParams['nameId']);
+                $controller->putData($table, $data, $getParams['id'], $getParams['nameId']);
             } else {
                 $tableToken = $getParams['table'] ?? 'users';
                 $suffix = $getParams['suffix'] ?? 'user';
@@ -44,7 +46,7 @@ class PutService
                 $validate = AuthService::tokenValidate($getParams['token'], $tableToken, $suffix);
 
                 match ($validate) {
-                    TokenStatus::VALID => PutController::putData($table, $data, $getParams['id'], $getParams['nameId']),
+                    TokenStatus::VALID => $controller->putData($table, $data, $getParams['id'], $getParams['nameId']),
                     TokenStatus::EXPIRED => Response::error('Error: The token has expired', 303),
                     TokenStatus::INVALID => Response::error('Error: The user is not authorized'),
                 };

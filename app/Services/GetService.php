@@ -33,9 +33,11 @@ class GetService
         $hasSearch = !empty($params['linkTo']) && !empty($params['search']);
         $hasRange = !empty($params['linkTo']) && !empty($params['between1']) && !empty($params['between2']);
 
+        $controller = new GetController();
+
         match (true) {
             // Relaciones con rango
-            $isRelation && $hasRange => GetController::findRelationsBetween(
+            $isRelation && $hasRange => $controller->findRelationsBetween(
                 $params['rel'],
                 $params['type'],
                 $params['select'],
@@ -50,7 +52,7 @@ class GetService
                 $params['inTo'],
             ),
             // Relaciones con filtro
-            $isRelation && $hasFilter => GetController::findRelationsWithFilters(
+            $isRelation && $hasFilter => $controller->findRelationsWithFilters(
                 $params['rel'],
                 $params['type'],
                 $params['select'],
@@ -62,7 +64,7 @@ class GetService
                 $params['endAt'],
             ),
             // Relaciones con busqueda
-            $isRelation && $hasSearch => GetController::searchRelations(
+            $isRelation && $hasSearch => $controller->searchRelations(
                 $params['rel'],
                 $params['type'],
                 $params['select'],
@@ -74,7 +76,7 @@ class GetService
                 $params['endAt'],
             ),
             // Relaciones sin filtro
-            $isRelation => GetController::findRelations(
+            $isRelation => $controller->findRelations(
                 $params['rel'],
                 $params['type'],
                 $params['select'],
@@ -84,7 +86,7 @@ class GetService
                 $params['endAt'],
             ),
             // Búsqueda
-            $hasSearch => GetController::search(
+            $hasSearch => $controller->search(
                 $table,
                 $params['select'],
                 $params['linkTo'],
@@ -95,7 +97,7 @@ class GetService
                 $params['endAt'],
             ),
             // Rango
-            $hasRange => GetController::findBetween(
+            $hasRange => $controller->findBetween(
                 $table,
                 $params['select'],
                 $params['linkTo'],
@@ -109,7 +111,7 @@ class GetService
                 $params['inTo'],
             ),
             // Filtro normal
-            $hasFilter => GetController::findWithFilters(
+            $hasFilter => $controller->findWithFilters(
                 $table,
                 $params['select'],
                 $params['linkTo'],
@@ -120,7 +122,7 @@ class GetService
                 $params['endAt'],
             ),
             // Sin filtros
-            default => GetController::find(
+            default => $controller->find(
                 $table,
                 $params['select'],
                 $params['orderBy'],
