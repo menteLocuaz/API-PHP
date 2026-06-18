@@ -7,15 +7,29 @@ namespace Arancamon\ApiPhp\Controllers;
 use Arancamon\ApiPhp\Http\Response;
 use Arancamon\ApiPhp\Models\GetModel;
 use Arancamon\ApiPhp\Models\PosModel;
-use Arancamon\ApiPhp\Models\PutModel;
+use Arancamon\ApiPhp\Models\PutRepository;
 use Arancamon\ApiPhp\Security\JwtService;
 use Firebase\JWT\JWT;
 
 class PosController
 {
+    private \Closure $jwtEncoder;
+
+    public function __construct(
+        private ?PosModel $posModel = null,
+        private ?GetModel $getModel = null,
+        private ?PutRepository $putRepository = null,
+        ?\Closure $jwtEncoder = null,
+    ) {
+        $this->posModel ??= new PosModel;
+        $this->getModel ??= new GetModel;
+        $this->putRepository ??= new PutRepository;
+        $this->jwtEncoder = $jwtEncoder ?? JWT::encode(...);
+    }
+
     public function postData(string $table, array $data): void
     {
-        $response = PosModel::postData($table, $data);
+        $response = $this->posModel->postData($table, $data);
         $this->response($response);
     }
 
@@ -25,13 +39,13 @@ class PosController
             $crypt = crypt($data['password_' . $suffix], '$2a$07$azybxcags23425sdg23sdfhsd$');
             $data['password_' . $suffix] = $crypt;
 
-            $response = PosModel::postData($table, $data);
+            $response = $this->posModel->postData($table, $data);
             $this->response($response, null, $suffix);
         } else {
-            $response = PosModel::postData($table, $data);
+            $response = $this->posModel->postData($table, $data);
 
             if (isset($response['comment']) && $response['comment'] == 'The process was successful') {
-                $getResponse = GetModel::findWithFilters(
+                $getResponse = $this->getModel->findWithFilters(
                     $table,
                     '*',
                     'email_' . $suffix,
@@ -44,9 +58,9 @@ class PosController
 
                 if (!empty($getResponse)) {
                     $token = JwtService::jwt($getResponse[0]->{'id_' . $suffix}, $getResponse[0]->{'email_' . $suffix});
-                    $jwt = JWT::encode($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
+                    $jwt = ($this->jwtEncoder)($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
 
-                    $update = PutModel::putData(
+                    $update = $this->putRepository->update(
                         $table,
                         [
                             'token_' . $suffix => $jwt,
@@ -69,7 +83,7 @@ class PosController
 
     public function postLogin(string $table, array $data, string $suffix): void
     {
-        $response = GetModel::findWithFilters(
+        $response = $this->getModel->findWithFilters(
             $table,
             '*',
             'email_' . $suffix,
@@ -86,9 +100,9 @@ class PosController
 
                 if ($response[0]->{'password_' . $suffix} == $crypt) {
                     $token = JwtService::jwt($response[0]->{'id_' . $suffix}, $response[0]->{'email_' . $suffix});
-                    $jwt = JWT::encode($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
+                    $jwt = ($this->jwtEncoder)($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
 
-                    $update = PutModel::putData(
+                    $update = $this->putRepository->update(
                         $table,
                         [
                             'token_' . $suffix => $jwt,
@@ -109,9 +123,9 @@ class PosController
                 }
             } else {
                 $token = JwtService::jwt($response[0]->{'id_' . $suffix}, $response[0]->{'email_' . $suffix});
-                $jwt = JWT::encode($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
+                $jwt = ($this->jwtEncoder)($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
 
-                $update = PutModel::putData(
+                $update = $this->putRepository->update(
                     $table,
                     [
                         'token_' . $suffix => $jwt,
