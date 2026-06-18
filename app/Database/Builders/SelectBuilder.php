@@ -41,6 +41,26 @@ class SelectBuilder
         return " LIMIT {$endAt} OFFSET {$startAt}";
     }
 
+    public static function buildUpdate(string $table, array $columns, string $nameId): string
+    {
+        self::validateIdentifier($table);
+        self::validateIdentifier($nameId);
+
+        foreach ($columns as $column) {
+            self::validateIdentifier($column);
+        }
+
+        $set = implode(
+            ', ',
+            array_map(
+                fn ($col) => "{$col} = :{$col}",
+                $columns
+            )
+        );
+
+        return "UPDATE {$table} SET {$set} WHERE {$nameId} = :{$nameId}";
+    }
+
     public static function validateIdentifier(string $name): void
     {
         if (!preg_match('/^[a-zA-Z0-9_.,*]+$/', $name)) {

@@ -30,6 +30,11 @@ class QueryBuilder
         return SelectBuilder::buildLimit($startAt, $endAt);
     }
 
+    public static function buildUpdate(string $table, array $columns, string $nameId): string
+    {
+        return SelectBuilder::buildUpdate($table, $columns, $nameId);
+    }
+
     public static function buildJoin(array $tables, array $types): string
     {
         return JoinBuilder::build($tables, $types);

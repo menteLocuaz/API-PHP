@@ -16,5 +16,7 @@ interface QueryBuilderInterface
 
     public static function buildJoin(array $tables, array $types): string;
 
+    public static function buildUpdate(string $table, array $columns, string $nameId): string;
+
     public static function validateIdentifier(string $name): void;
 }
