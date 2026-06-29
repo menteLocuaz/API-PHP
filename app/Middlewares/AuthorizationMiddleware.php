@@ -13,9 +13,13 @@ class AuthorizationMiddleware
 {
     public function handle(string $table): bool
     {
-        $authorization = Request::header('Authorization');
+        $authorization = trim((string) Request::header('Authorization'));
 
-        if ($authorization === AuthService::apiKey()) {
+        if (str_starts_with($authorization, 'Bearer ')) {
+            $authorization = substr($authorization, 7);
+        }
+
+        if (hash_equals(AuthService::apiKey(), $authorization)) {
             return true;
         }
 
