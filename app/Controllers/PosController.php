@@ -58,7 +58,7 @@ class PosController
 
                 if (!empty($getResponse)) {
                     $token = JwtService::jwt($getResponse[0]->{'id_' . $suffix}, $getResponse[0]->{'email_' . $suffix});
-                    $jwt = ($this->jwtEncoder)($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
+                    $jwt = ($this->jwtEncoder)($token, $_ENV['JWT_SECRET'] ?? 'dfhsdfg34dfchs4xgsrsdry46_change_me_in_env', 'HS256');
 
                     $update = $this->putRepository->update(
                         $table,
@@ -100,7 +100,7 @@ class PosController
 
                 if ($response[0]->{'password_' . $suffix} == $crypt) {
                     $token = JwtService::jwt($response[0]->{'id_' . $suffix}, $response[0]->{'email_' . $suffix});
-                    $jwt = ($this->jwtEncoder)($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
+                    $jwt = ($this->jwtEncoder)($token, $_ENV['JWT_SECRET'] ?? 'dfhsdfg34dfchs4xgsrsdry46_change_me_in_env', 'HS256');
 
                     $update = $this->putRepository->update(
                         $table,
@@ -123,7 +123,7 @@ class PosController
                 }
             } else {
                 $token = JwtService::jwt($response[0]->{'id_' . $suffix}, $response[0]->{'email_' . $suffix});
-                $jwt = ($this->jwtEncoder)($token, 'dfhsdfg34dfchs4xgsrsdry46', 'HS256');
+                $jwt = ($this->jwtEncoder)($token, $_ENV['JWT_SECRET'] ?? 'dfhsdfg34dfchs4xgsrsdry46_change_me_in_env', 'HS256');
 
                 $update = $this->putRepository->update(
                     $table,

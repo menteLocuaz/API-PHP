@@ -6,10 +6,8 @@ namespace Arancamon\ApiPhp\Security;
 
 class JwtService
 {
-    public static function jwt(
-        int|string $id,
-        string $email,
-    ): array {
+    public static function jwt(int|string $id, string $email): array
+    {
         $time = time();
 
         return [
